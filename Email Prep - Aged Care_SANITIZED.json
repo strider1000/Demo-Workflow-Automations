@@ -1,0 +1,1461 @@
+{
+  "name": "Email Prep - Aged Care",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-f1db6c.stack.tryrelevance.com/latest/studios/7d6c715c-47b5-4deb-99d4-726fbd444577/trigger_webhook?project=d95ca457e701-4476-89bd-7018a81878b6",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "[REDACTED]"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"linkedin_url\":\"{{ $json['Personal LinkedIn URL'] }}\",\n\"last_x_days\":30\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        624
+      ],
+      "id": "66cfaf0b-6f2c-4a86-a6db-bfe8ceda711d",
+      "name": "Scrape Profiles + Posts - Relevance AI1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"sonar\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a researcher in a business development team. Your job is to find as much research as you can about a prospect company. You must ensure your research is for the correct company and is highly accurate. Your research must always include what the prospect company does in detail. Your research should also highlight any recent news or accomplishments from the company.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Find as much info as you can about {{ $('Get row(s) in sheet').item.json['Company Name'] }}. This is their website URL: {{ $('Get row(s) in sheet').item.json['Website URL'] }}. Make sure your research is 100% related to them.\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -96,
+        624
+      ],
+      "id": "124b5e18-5b2f-485f-b081-c3b41201209f",
+      "name": "Research Company - Perplexity1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uiHkSp7yr3J0HNGd",
+          "name": "Perplexity API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/nikita-sviridenko~trustpilot-reviews-scraper/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"companyDomain\": \"{{ $('Scrape Profiles + Posts - Relevance AI1').item.json.linkedin_profile_details_data.company_domain }}\",\n    \"count\": 5,\n    \"replies\": false,\n    \"sort\": \"recency\",\n    \"stars\": [\n        \"1\",\n        \"2\",\n        \"3\"\n    ],\n    \"startPage\": 1,\n    \"verified\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        608
+      ],
+      "id": "e7aaa168-89ce-4b83-96a6-fb901507f40e",
+      "name": "TrustPilot Reviews (1-3 Stars)1",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=# Overview\nYou are part of the cold email team at Knnektr, which is an AI driven cold outreach & growth partner specialising in connecting companies with their dream clients.\n\nKnnektr offers a fully automated cold email outreach system that uses cutting edge AI technology to hone in on a clients ideal customer base with an offer that is personalised & optimized to every single prospects pain points, resulting in more replies and a full sales pipeline.\n\n# Task\nYour job is to analyse the research found on a prospect, which will then be provided to another team that writes a cold email. For each prospect you must find the following: \n\n*1. Personalization opportunity:* \nYou must analyse the research found on the prospect to identify the top personalization opportunities. The personalization can be one of the following: \n- Referencing content they’ve posted on LinkedIn [best one].\n- Mentioning a specific achievement or news related to themselves or their business.\n- personalized compliment or observation about their work.\n- Mentioning unique aspects of their professional background. \nThe references must be highly specific that couldn't be mass-generated. Each reference should feel like a 1 to 1 communication, showing we've done our research on the prospect. Aim: Reader thinks “Whoa, this is for me.” If you can't find any good personalization opportunities, then leave this blank. \n\n*2. Pain points and solutions:* \nAnalyse the research to identify the prospects biggest pain points. Take into consideration their role, their company details and all other research to predict what their biggest bottle necks are. Then think of these pain points in terms of Knnektr services - Which ones can we solve? List the 2 biggest pain points that we can help with and define the actionable solution we can offer them. Turn the actionable solution into a clear and concise offer. \n- The solutions should be specific offerings, not broad services. So instead of saying \"cold outreach\", you must clearly define exactly how our solution will add value and solve their pain points.\n\n\n# Output Format \nYour output must be in the following format: \n\n*Personalization*\n1. Opportunity: HERE\nSupporting Evidence: HERE\n\n2. Opportunity: HERE\nSupporting Evidence: HERE\n\n(…add more as needed)\n\n⸻\n\n*Pain Points & Solutions*\n1. Pain Point: HERE\nSupporting Evidence: HERE\nSolution & Offer: HERE\n\n2. Pain Point: HERE\nSupporting Evidence: HERE\nSolution & Offer: HERE\n\nWhere supporting evidence is provided you must include specific examples and evidence from the research that support your findings. You must give enough detail in the HERE sections so the reader does not need to revisit the research to create a cold email.\nThe opportunities should also be explained in enough detail so the reader has enough context to understand the opportunity. So for example, instead of saying \"news A\", you must explain exactly what \"news A\" entails and why it's significant. \n\n- Don't output anything else.\n- Replace HERE with the relevant string.\n- If there are no clear personalization opportunities, then replace HERE with null. \n- Make sure your outputs are well thought out. \n\n# Use the below research to complete the analysis for the prospect.\n\nResearch: \n\n1. Scraped LinkedIn profile in JSON format: \n{{ $('Scrape Profiles + Posts - Relevance AI1').item.json.linkedin_profile_details_data.toJsonString() }}\n\n2. Company research from searching the web: \n{{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        96,
+        624
+      ],
+      "id": "fb037821-a28c-484f-8d1a-433bba2e708d",
+      "name": "Analyse",
+      "credentials": {
+        "openAiApi": {
+          "id": "EFYq4VPgudLw8nL7",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop through each item in the input\nfor (let i = 0; i < items.length; i++) {\n  // Calculate the batch value (B1, B2, B3, cycling)\n  const batchNumber = (i % 3) + 1;\n  \n  // Update the Batch field\n  items[i].json.Batch = `B${batchNumber}`;\n}\n\n// Return the updated items\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        608
+      ],
+      "id": "423f5594-138f-41bd-b3f2-9a8d1cbbe896",
+      "name": "Batch"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -80
+      ],
+      "id": "ed301106-c32f-41dc-b16d-250241b2c8ad",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "anthropic/claude-3.7-sonnet",
+          "mode": "list",
+          "cachedResultName": "ANTHROPIC/CLAUDE-3.7-SONNET"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are part of the cold email team at Knnektr, which is an AI driven cold outreach & growth partner agency specialising in connecting companies with their dream clients.\n\nYour job is to write a cold email sequence of 3 emails which will be sent 2 days apart, using the following tactics and the provided research analysis. You will be provided with:\n\n1. Research analysis: Findings & insights extracted about the prospect by researching them on social media and the web.\n\n2. Tactic: Strategy to create the cold emails.\n\nThe tactic for each email should closely follow the instructions below, whilst the content of each email must be based on the provided research analysis.\n\n\n# Tactic: \n\n1. Email#1: \n\n1.1 Subject line: \n\nThe email subject line should : \n- Be maximum 4 words \n- Include the prospects name or company name (choose based on context) when possible without sounding unnatural \n- Never include spam trigger words like “free,” “guarantee,” “no obligation,” \"price,\" \"100%\" \"sale,\" and excessive punctuation, which can trigger spam filters. \n- Create curiousity without sounding spammy or like we're selling them anything \n\n\n1.2 Body\n\nStructure: The email must follow this structure closely:\na) Hook: The first 2 or 3 sentences of the email is a hook. The hook should be the personalization part of the email, capturing the prospects attention so they don't scroll (Refer to personalization section of research analysis).\nb) Pain point: After the hook, you must outline a pain point that was analysed about the prospect. This shouldn't sound salesy, but should be directly related to their business. The goal is to capture the readers attention, not sell them a solution. \nc) Solution & CTA: Give them a small taste of our solution and say we would love to share our insights over a quick 15 minute call.\nd) CTA: Have a clear next step for them (for example \"Should I book you in on {{ ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][(new Date().getDay() + 2) % 7] }} for a quick 15 minute call?)\n\nGuidelines -  The email body should:\n\n- Be short (maximum 100 words).\n- Have short paragraphs (1 or 2 sentences in each) to include white space. \n- Use a conversational tone to keep the email casual. \n- Be \"You\" focused, incorporating \"you\" as much as possible.\n- Be in 6th-grade reading level with simple language. \n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, punctuation.\n- Not have absurd claims (it should be believable).\n- Should always start with \"Hey {{ $('Limit').item.json['First Name'] }},\"\n- Should be concise. \n- Never start with formal openers like \"Hope you're doing well\" (Get right into the email every time).\n- Be nice and inviting.\n- End with \"Best, Patrick\"\n\n2. Email#2: \n\nThis email will be in the same thread as email#1 and is considered a followup email (so it doesn't need a subject line).\nThe email should be a close variant of this email: \n\"Hey {{ $('Limit').item.json['First Name'] }}, \nJust pushing this back up your inbox incased you missed it. \nLook forward to hearing from you. \nKind regards, \nPatrick\" \n\n3. Email#3: \n\nThis email should follow the same structure and guidelines of Email#1, with the following differences: \n- It should mention a different pain point identified.\n- Should be like you already know them from the previous conversation, so it shouldn't include any personalisation other than the prospects name. Can start with a variation of I was thinking about {Prospect Company Name} again and...\n\n\n# Rules - Other things to consider: \n- Your goal is to create an engaging email that will get us a reply. Choose the best pain points and personalization opportunities from the analysis to achieve this objective. \n- You must closely follow the guidelines provided for each email. \n- Never come across as condescending or rude when mentioning the pain point. \n- When using the personalization opportunities from the analysis, always mention where the info was found - usually  \"Online\" or \"LinkedIn\" (look at Supporting Evidence for this).\n\n# Output format\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"subject\": \"TEXT-HERE\",\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email3\": {\n    \"subject\": \"HERE\",\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```. \n- Don't output anything else. \n- Keep the HTML code to a minimum by using only <br> for line breaks and nothing else.\n\n# Task: New prospect\nCreate the 3 emails by considering the following:\n\nFirst name: {{ $('Limit').item.json['First Name'] }} \n\nCompany name: {{ $('Limit').item.json['Company Name'] }} (ignore any legal suffixes like pty ltd or llc) \n\n2. Rsearch analysis: \n{{ $json.message.content }} \n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        416,
+        624
+      ],
+      "id": "26998831-83db-47e5-9f49-bb5a90cde2be",
+      "name": "Email #1 #2 #3 (Original format)",
+      "credentials": {
+        "openAiApi": {
+          "id": "OfcSQUeiUrBgYSlU",
+          "name": "Open Router"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "=  {{ $json.text.replaceAll('```json','').replaceAll('```','') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        -64
+      ],
+      "id": "25574f93-5a91-4e0d-98fd-3f24625d2875",
+      "name": "Split emails",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-f1db6c.stack.tryrelevance.com/latest/studios/7d6c715c-47b5-4deb-99d4-726fbd444577/trigger_webhook?project=d95ca457e701-4476-89bd-7018a81878b6",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "[REDACTED]"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"linkedin_url\":\"{{ $json['Personal LinkedIn URL'] }}\",\n\"last_x_days\":30\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        272
+      ],
+      "id": "4fe948d9-df39-4851-bd33-08b52e8ef65c",
+      "name": "Scrape Profiles + Posts - Relevance AI",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        -80
+      ],
+      "id": "8777d91e-20ab-4733-bcb0-899db04b323e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "maxItems": 500
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -80
+      ],
+      "id": "4150bbb6-abb7-40d6-b5b7-f906bf1a2a61",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4",
+        "options": {
+          "maxTokens": 3000,
+          "temperature": 0.6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        224,
+        496
+      ],
+      "id": "a5bf1569-939a-4465-8670-ff5e069ecf5e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "UpV21Z3vKMd1YHwz",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are part of the cold email team at LeadsAlways, which is an AI driven cold outreach & growth partner agency. We are targeting Sales Managers/ Sales Directors of Information Technology, Information Services and IT Consulting, Computer and Network Security companies who are seeking to win more contracts and grow revenue.\n\nYour job is to write 3 separate personalised hooks, that will be added to a cold email sequence, using the below tactic and the provided research. \n\n-----------\n\n# Tactic: \nUse the below templates, swapping out the [bracketed] sections using the provided research. The hooks should feel like casual, insider-style messages that feel personal and credible. The tone should be like a fellow founder/operator making a warm connection.\n\n# Email 1 - Hook 1 (Opening personalisation): \n\nTemplate:\nNoticed [Company Name] has been working on [Specific Initiative, e.g., a new marketing campaign, feature launch, or product improvement], looks like you're on the right track to improving [Specific Aspect, e.g., user experience, conversion funnels, etc.] and I can help accelerate that process.\n \nExample:\n\"Noticed ABC Co has been working on a new referral program, looks like you're on the right track to improving user acquisition and engagement. It’s clear you’re putting in the effort to scale, and I can help accelerate that process.\"\n\n# Email 1 - Hook 2 (Our offer):\n\nTemplate:\nReason I'm reaching out is we built a sales system that books 10-15 qualified sales meetings every month with decision makers of [THEIR IDEAL CLIENT] in [LOCATION], looking for [WHAT THEY OFFER].\n\nExample:\n\"Reason I'm reaching out is we built a sales system that books 10-15 qualified sales meetings every month with decision makers of companies planning cloud migration projects across APAC, that are looking for certified cloud implementation specialists.\"\n\n# Email 2 - Hook 3 (Follow up email):\n\nTemplate:\nJust touching base again quickly to see if connecting with decision makers of [IDEAL CLIENTS] is of interest?\n\n\nGuidelines -  The personalised hooks/message should:\n\n- Use a conversational tone to keep the email casual. The message should feel like a casual LinkedIn message between peers, not a formal business outreach.\n- Be in 6th-grade reading level with simple language. \n- Keep each hook short, 2 lines max.\n- NO EMOJIS.\n- You must closely follow the above guidelines provided for each hook. \n\n\n-----------\n\n# Provided Research: \nCreate the hooks by considering the following research:\n\nCompany Name: {{ $('Get row(s) in sheet').item.json['Company Name'] }} (if the name is multiple words then just use the first word and ignore any legal suffixes like pty ltd or llc)\n\nAbout the company: {{ $('Get row(s) in sheet').item.json['Co. Description'] }}\n\nCompany Location: {{ $('Get row(s) in sheet').item.json.Location }}\n\n-----------\n\n# Output format\nYour output must follow this JSON format: \n\n{\n  \"hook1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```. \n- Don't output anything else. \n- Keep the HTML code to a minimum\n- Output the result only with no additional text.",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        224,
+        368
+      ],
+      "id": "d678c7b0-0b49-46e7-928a-a7bea74c530d",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xdRwV6kBzYxpdT3tcj06dMD9eaqR4LSVooiBc0Yi2n8",
+          "mode": "list",
+          "cachedResultName": "Patrick - Aged Care Campaign_1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xdRwV6kBzYxpdT3tcj06dMD9eaqR4LSVooiBc0Yi2n8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2138443083,
+          "mode": "list",
+          "cachedResultName": "Aged Care Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xdRwV6kBzYxpdT3tcj06dMD9eaqR4LSVooiBc0Yi2n8/edit#gid=2138443083"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Ready",
+              "lookupValue": "Yes"
+            },
+            {
+              "lookupColumn": "Processed",
+              "lookupValue": "No"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -720,
+        -80
+      ],
+      "id": "19bf42d1-9dff-4dec-8259-6a2ab6dc6886",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KHJY2NQviymnfwqJ",
+          "name": "Google Sheets API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1xdRwV6kBzYxpdT3tcj06dMD9eaqR4LSVooiBc0Yi2n8",
+          "mode": "list",
+          "cachedResultName": "Patrick - Aged Care Campaign_1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xdRwV6kBzYxpdT3tcj06dMD9eaqR4LSVooiBc0Yi2n8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2138443083,
+          "mode": "list",
+          "cachedResultName": "Aged Care Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19xR6BiZd3eYdwSAZHMjU8RHqyCoC34pQXn2-iGJ4NB8/edit#gid=2138443083"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Get row(s) in sheet').item.json.Email }}",
+            "Processed": "Yes",
+            "V2 Subject": "={{ $json.subject.body }}",
+            "V2 Email #1": "={{ $json.email1.body }}",
+            "V2 Email #2": "={{ $json.email2.body }}",
+            "V2 Email #3": "={{ $json.email3.body }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Provider Name",
+              "displayName": "Provider Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Service Name",
+              "displayName": "Service Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Care Type",
+              "displayName": "Care Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Residential Places",
+              "displayName": "Residential Places",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Home Care Places",
+              "displayName": "Home Care Places",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Restorative Care Places",
+              "displayName": "Restorative Care Places",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Physical Address",
+              "displayName": "Physical Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Suburb",
+              "displayName": "Suburb",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Physical State",
+              "displayName": "Physical State",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Postal Code",
+              "displayName": "Postal Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2018 Aged Care Planning Region (ACPR) Code",
+              "displayName": "2018 Aged Care Planning Region (ACPR) Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2018 Aged Care Planning Region (ACPR)",
+              "displayName": "2018 Aged Care Planning Region (ACPR)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Organisation Type",
+              "displayName": "Organisation Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ABS Remoteness",
+              "displayName": "ABS Remoteness",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2019 MMM Code",
+              "displayName": "2019 MMM Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 SA2 Code",
+              "displayName": "2016 SA2 Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 SA2 Name",
+              "displayName": "2016 SA2 Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 SA3 Code",
+              "displayName": "2016 SA3 Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 SA3 Name",
+              "displayName": "2016 SA3 Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 LGA Name",
+              "displayName": "2016 LGA Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2016 LGA Code",
+              "displayName": "2016 LGA Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2017 PHN Code",
+              "displayName": "2017 PHN Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2017 PHN Name",
+              "displayName": "2017 PHN Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Latitude",
+              "displayName": "Latitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Longitude",
+              "displayName": "Longitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "2023/24 FY Australian Government Funding",
+              "displayName": "2023/24 FY Australian Government Funding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ready",
+              "displayName": "Ready",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed",
+              "displayName": "Processed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact Position",
+              "displayName": "Contact Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Generic Contact Email",
+              "displayName": "Generic Contact Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Domain",
+              "displayName": "Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EMAIL STATUS",
+              "displayName": "EMAIL STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Research",
+              "displayName": "Research",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email #1",
+              "displayName": "Email #1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email #2",
+              "displayName": "Email #2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email #3",
+              "displayName": "Email #3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V2 Subject",
+              "displayName": "V2 Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V2 Email #1",
+              "displayName": "V2 Email #1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V2 Email #2",
+              "displayName": "V2 Email #2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V2 Email #3",
+              "displayName": "V2 Email #3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V3 Subject",
+              "displayName": "V3 Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V3 Email #1",
+              "displayName": "V3 Email #1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V3 Email #2",
+              "displayName": "V3 Email #2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "V3 Email #3",
+              "displayName": "V3 Email #3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data 1",
+              "displayName": "Data 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data 2",
+              "displayName": "Data 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data 3",
+              "displayName": "Data 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 41",
+              "displayName": "Column 41",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 43",
+              "displayName": "Column 43",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 38",
+              "displayName": "Column 38",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 39",
+              "displayName": "Column 39",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 40",
+              "displayName": "Column 40",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        976,
+        -64
+      ],
+      "id": "a811c095-67c8-4446-83c9-0ccb51595746",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KHJY2NQviymnfwqJ",
+          "name": "Google Sheets API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Prospect details:\nName: {{ $('Get row(s) in sheet').item.json['First Name'] }}{{ $('Get row(s) in sheet').item.json['Last Name'] }}\nPosition: {{ $('Get row(s) in sheet').item.json.Position }}\nCompany Name: {{ $('Get row(s) in sheet').item.json.Company }}\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a web researcher for the business development team at Evaheld."
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=You are an online researcher working for the marketing team at Evaheld. Evaheld removes inefficiencies and enhances resident satisfaction by providing aged care facilities with an integrated digital platform that combines advance care planning and legacy storytelling, resulting in higher resident engagement, stronger family connections, and increased occupancy rates.\n\nYour job is to:\n\na) Research the prospect to find useful, recent & relevant information that could be used to relate to them in a personalised cold email. Report back on the 2 most useful items you find.\n\nHere are some examples of information that could be very useful in creating a cold email: \n- Pain points they've posted about (best one).\n- Articles they have featured in.\n- Relevant content they’ve posted on LinkedIn or other places. Make sure to include sufficient details of the post.\n- Specific achievements or news related to themselves or their organsiation such as recent initiatives they've implemented, recent promotions, other accomplishments.\n- Awards they have won.\n\nb) Research recent news and pain points related to the prospects company/industry and report back with 1 news item and 2 industry pain points.\n\n# Guidelines for research report:\n- Include enough information on each item in order for your team to write the email.\n- You must ensure your research is 100% related to them and is highly accurate. \n- Your report should be no longer than 320 words.\n- Do not include conclusions or intros in your output.\n\n"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -64,
+        -528
+      ],
+      "id": "468c73da-9b62-417d-a100-8d14368a0159",
+      "name": "Prospect Researcher"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.7-sonnet",
+        "options": {
+          "maxTokens": 3000,
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        592,
+        464
+      ],
+      "id": "a5bb66ff-5cb7-4c78-9243-77ed85c2a0a0",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "UpV21Z3vKMd1YHwz",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a cold email writer.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are part of the cold email team at LeadsAlways, which is an AI driven cold outreach & growth partner agency. We are targeting Sales Managers/ Sales Directors of Information Technology, Information Services and IT Consulting, Computer and Network Security companies who are seeking to win more contracts and grow revenue.  Your job is to write 3 separate personalised hooks, that will be added to a cold email sequence, using the below tactic and the provided research.\n\n-----------  \n\n# Tactic:  Use the below templates, swapping out the [bracketed] sections using the provided research. The hooks should feel like casual, insider-style messages that feel personal and credible. The tone should be like a fellow founder/operator making a warm connection.  \n\n# Email 1 - Hook 1 (Opening personalisation):\n\nThe first sentence of the email is the hook. Analyse the provided research to identify the best personalization opportunity. The personalization can be one of the following: \n- Awards they have won.\n- Articles they have featured in.\n- Content they’ve posted on LinkedIn or other places.\n- Specific achievements or news related to themselves or their institution such as recent deals they've landed, recent promotions, other accomplishments.\n- Pain points they've mentioned.\n- Unique aspects of their professional background.\n\n# Email 1 - Hook 2 (Pain Point):  \n\nAfter the hook, you must identify a pain point from the provided research that is directly related to their institution. The goal is to capture the readers attention and demonstrate that we understand their pain concerns, not sell them a solution. Keep it to 1-2 lines. \n\n# Email 1 - Hook 3 (Our offer):  \nTemplate: \nReason I'm reaching out is we actually built a sales system that books 10-15 qualified sales meetings every month with decision makers of [THEIR IDEAL CLIENT] in [LOCATION], looking for [WHAT THEY OFFER].\n\nExample: \n\"Reason I'm reaching out is we actually built a sales system that books 10-15 qualified sales meetings every month with decision makers of companies planning cloud migration projects across APAC, that are looking for certified cloud implementation specialists.\"\n\n# Email 2 - Hook 4 (Follow up email):  \n\nTemplate: \nJust touching base again quickly to see if connecting with decision makers of [IDEAL CLIENTS] is of interest?   \n\nGuidelines -  The personalised hooks/message should:\n- Your goal is to create engaging hooks that will get us a reply. Choose the best pain points and personalization opportunities from the research to achieve this objective. \n- Use a conversational tone to keep the email casual. The message should feel like a casual LinkedIn message between peers, not a formal business outreach. i.e. Instead of saying 'Congratulation', say 'Congrats'.\n- Be in 6th-grade reading level with simple language.\n- Keep each hook short, 3 lines max. \n- NO EMOJIS.\n- Use UK English.\n- You must closely follow the above guidelines provided for each hook.    \n\n-----------  \n\n# Output format \nYour output must follow this JSON format:   \n\n{\n  \"hook1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook3\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook4\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```.  \n- Don't output anything else.  \n- Keep the HTML code to a minimum \n- Output the result only with no additional text."
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=# Provided Research:\nCreate the hooks by considering the following research:    \n\nAbout the prospect: {{ $json.text }}\n\nCompany Name: {{ $('Get row(s) in sheet').item.json['Company Name'] }} (ignore any legal suffixes like pty ltd or llc)\n\nCompany short description: {{ $('Get row(s) in sheet').item.json['Co. Description'] }}\n\nCompany Location: {{ $('Get row(s) in sheet').item.json['Country '] }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        592,
+        368
+      ],
+      "id": "9d812717-a9c4-4003-99de-2debd14d6543",
+      "name": "Original Hooks"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI-2025-04-14"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are part of the cold email team at LeadsAlways, which is an AI driven cold outreach & growth partner agency. We are targeting Sales Managers/ Sales Directors of companies that are currently hiring sales people.\n\nYour job is to write 3 separate personalised hooks that will be added to a cold email sequence of 3 emails, using the below tactic and the provided research. \n\n-----------\n\n# Tactic: \nUse the below templates, swapping out the [bracketed] sections using the provided research. The hooks should feel like casual, insider-style messages that feel personal and credible. The tone should be like a fellow founder/operator making a warm connection.\n\n1. Hook#1: \n\nTemplate:\n\"I see you [recent milestone or event related to the prospect or their company - funding, launches, expansions, partnerships, hires, etc. Preferably focus on sales-relevant achievements if possible].\" \n\n\n2. Hook#2:\n\nTemplate:\n“Most companies hiring for [sales_hiring_category goes here] struggle with keeping their pipeline full enough to support the new headcount.” \n\nNotes: Use the below Job Description to distinguish what sales hiring scenario they are in – whether they’re building their first sales team, scaling existing teams, entering new markets, or replacing underperformers. \n\n\n3. Hook#3:\n\nTemplate:\n\n\"Not sure if you saw my earlier note — but since you're bringing on a [job title}, I thought you might find this interesting. \n\n\nGuidelines -  The personalised hooks/message should:\n\n- Use a conversational tone to keep the email casual. The message should feel like a casual LinkedIn message between peers, not a formal business outreach.\n- Do not simply quote directly from something they've written on their LinkedIn. It should sound natural and something you would actually compliment someone on in real life.\n- Be in 6th-grade reading level with simple language. \n- Keep each hook short, 5 lines max, genuine.\n- NO EMOJIS.\n- Clean the job title by removing unnecessary details and returning only the core job title, example: Sales Representative will be \"Sales Rep\", Chief Marketing Officer will be \"CMO\", AI Engineer - Front End will be \"AI Engineer\".\n- You must closely follow the guidelines provided for each hook. \n\n\n-----------\n\n# Provided Research: \nCreate the 3 hooks by considering the following research:\n\nCompany Name: {{ $('Get row(s) in sheet').item.json['Company Name'] }} (if the name is multiple words then just use the first word and ignore any legal suffixes like pty ltd or llc)\n\nAbout prospect: {{ $json.linkedin_profile_details_data }}\n\nJob description: {{ $('Get row(s) in sheet').item.json['Job Description'] }}\n\n-----------\n\n# Output format\nYour output must follow this JSON format: \n\n{\n  \"hook1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"hook3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```. \n- Don't output anything else. \n- Keep the HTML code to a minimum by using only <br><br> for line breaks and nothing else.\n- Output the result only with no additional text."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        896,
+        848
+      ],
+      "id": "32c5dc1a-ad96-41b6-b110-8d5b3b8a0531",
+      "name": "Hiring Sales Staff",
+      "credentials": {
+        "openAiApi": {
+          "id": "OfcSQUeiUrBgYSlU",
+          "name": "Open Router"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI-2025-04-14"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a sales hiring pattern recognizer. Adopt the persona of a sharp-eyed sales operations analyst who specializes in identifying companies actively scaling their sales teams. Your focus laser-targets job postings, company growth signals, and hiring patterns that indicate a company is in active sales expansion mode. You scrutinize the provided job description and company information to determine the specific sales role category they’re recruiting for. \n\nYour expertise lies in distinguishing between different sales hiring scenarios – whether they’re building their first sales team, scaling existing teams, entering new markets, or replacing underperformers. You communicate with surgical precision, distilling complex hiring information into clear, actionable sales role categories. \n\nYour tone is direct and tactical, embodying the mindset of someone who understands sales team dynamics and growth phases. You deliver insights in a concise 2–3 word phrase that captures the essence of their sales hiring intent. \n\nYou operate with tactical precision, ensuring adherence to formatting guidelines: your sales hiring category phrase begins with lowercase unless it’s a proper noun, contains no ending punctuation or quotation marks, and integrates seamlessly within the check sentence. Do not output anything other than the sentence in this format:\n“Most companies hiring for [sales_hiring_category] struggle with keeping their pipeline full enough to support the new headcount.” \n\nYour process is iterative and results-focused, constantly refining to better identify the core sales hiring challenge. As a sales growth translator, you convert hiring signals into actionable insights that speak directly to the pain points of sales leaders managing team expansion. \n\nYour primary objective is ensuring the sales hiring category accurately reflects their current sales team buildout phase, resonates with sales leadership challenges, and adheres to the provided format. \n\nJob Description:\n{{ $('Loop Over Items').item.json['Job Description'] }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        512,
+        848
+      ],
+      "id": "5300d59e-bb23-4479-a3b6-9634564183f9",
+      "name": "sales hiring category",
+      "credentials": {
+        "openAiApi": {
+          "id": "EFYq4VPgudLw8nL7",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Overview\nYou are a cold email writer at Evaheld. Evaheld helps aged care and hospital leaders deliver compliant, personalised care by digitising advance care planning and life storytelling at scale. Evaheld eliminates the administrative burden and compliance risks of advance care planning while ensuring staff can access critical patient directives instantly during emergencies—reducing liability exposure and improving care outcomes across the entire organisation. \nBenefits of Evaheld:\n- Meet Aged Care Act 2024 requirements with ease\n- Reduce staff admin time and documentation burden\n- Improve resident and patient engagement and satisfaction\n- Strengthen family trust and communication\n- Provide audit-ready records for care preferences\n- Showcase commitment to person-centred, values-based care\n- Differentiate your facility with innovative, compassionate technology\n- Boost occupancy through improved care experience and reputation\n- Enable smoother end-of-life planning conversations\n- Centralise care preferences for better care team coordination\n\nWe are currently targeting key decision makers of Aged care facilities & Hospitals to offer our enterprise level platform subscription. \n\n-----------\n\n# Instructions\n  \n# Email 1\nUse the provided research to construct a perfect personalised cold email with the end objective to secure a meeting to discuss our offer further. \n\nRules - things to consider: \n- The email should feel natural and casual, like an insider-style message that feels personal and credible, not a hard sell cold email trying to convince them to buy our subscription. Keep the tone casual, not formal, use words like 'Congrats' instead of 'Congratulations' etc.\n- Your goal is to create an engaging email that will get us a reply. Choose the best  personalization opportunity and pain point from the research to achieve this objective. \n- Dont mention how many likes they got for a post.\n- Be in 6th-grade reading level with simple language. UK English.\n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, extra punctuation.\n- Not have absurd claims (it should be believable).\n- Be concise - 120 words max.\n- Never start with formal openers like \"Hope you're doing well\" (Get right into the email every time).\n- Be nice and inviting.\n- Do not include greetings or sign-offs, these will be added later.\n- Use <br><br> inbetween each section of email 1.\n\n-----------\n\n# Subject Line for Email 1:\nCreate a relevant 5-8 word subject line for email 1. It should sound personalable, not Spammy or tacky.\n\n-----------\n\n# Email 2: \nUse the contents of email 1 to create a short 1 sentence follow up email.\n\n-----------\n\n# Email 3: \nCreate a final follow up email that uses a different pain point or other info taken from the research - 2 sentences.\n\n-----------\n\n# Provided Research:\nCreate the emails by considering the following research:\n\nAbout the prospect: {{ $json.text }}\n\nCompany Name: {{ $('Get row(s) in sheet').item.json.Company }} (ignore any legal suffixes)\n\n-----------\n\n# Output format\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"subject\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```. \n- Don't output anything else. \n- Keep the HTML code to a minimum\n- Output the result only with no additional text."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        368,
+        -720
+      ],
+      "id": "850bac92-077e-4700-811a-47469ada93f0",
+      "name": "Script Option 1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Overview\nYou are a cold email writer at Evaheld. Evaheld helps aged care and hospital leaders deliver compliant, personalised care by digitising advance care planning and life storytelling at scale. Evaheld eliminates the administrative burden and compliance risks of advance care planning while ensuring staff can access critical patient directives instantly during emergencies—reducing liability exposure and improving care outcomes across the entire organisation.'\n\nBenefits of Evaheld:\n- Meet Aged Care Act 2024 requirements with ease\n- Reduce staff admin time and documentation burden\n- Improve resident and patient engagement and satisfaction\n- Strengthen family trust and communication\n- Provide audit-ready records for care preferences\n- Showcase commitment to person-centred, values-based care\n- Differentiate your facility with innovative, compassionate technology\n- Boost occupancy through improved care experience and reputation\n- Enable smoother end-of-life planning conversations\n- Centralise care preferences for better care team coordination\n\nWe are currently targeting key decision makers of Aged care facilities & Hospitals to offer our enterprise level platform subscription. \n\n-----------\n\n# Instructions\nWrite the emails by modifying the below templates using the provided research. The email should feel like a casual, insider-style message, making a warm connection. Only use 1 personalised obervation from the provided research in the opening hook. \n\n-----------\n\n# Email 1\n\nTemplate:\nSaw your post about Glengarry rolling out new digital tools for smoother admissions and discharge—such a smart move. It’s great to see a hospital genuinely leaning into tech to improve patient experience.\n\nIt caught my eye because we’re working with a few similar teams who are also trying to stay ahead of the new Aged Care Act 2024 changes. So I thought this might work for you too. I actually built Evaheld—a platform that helps hospitals like yours digitise advance care planning in a way that’s actually meaningful for patients and easier for staff.\n\nGiven your leadership in digital transformation, I'd love to show you how our solution could complement your patient-centered initiatives while helping address the industry-wide challenges of staff burnout and technology integration.\n\n-----------\n\n# Subject Line for Email 1:\nCreate a relevant 5-8 word subject line for email 1. It should sound personalable, not Spammy or tacky.\n\n-----------\n\n# Email 2 (Follow up email):\nUse the contents of email 1 to create a short 1 sentence follow up email.\n\nTemplate:\nJust touching base again quickly to see if simplifying how you meet Aged Care Act 2024 compliance is a current priority?\n\n-----------\n\n# Email 3: \nCreate a final follow up email that uses a different pain point or other info taken from the research - 2 sentences.\n\nTemplate:\nSorry just a final check-in to see if [solving some other pain point using our solution] is of interest?\n\n-----------\n\n# Rules - Other things to consider: \n- The emails should feel natural and casual, insider-style messages that feel personal and credible. The tone should feel like a fellow peer making a warm connection. Instead of saying 'Congratulations', say 'Congrats'.\n- When refering to company names, just use the shortened version.\n- Email 1 should be 115 words max.\n- Your goal is to create an engaging email that will get us a reply. Choose the best pain points and personalization opportunities from the research to achieve this objective. \n- Don't mention how many likes they got for a post.\n- Be in 6th-grade reading level with simple language. UK English.\n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, extra punctuation.\n- Not have absurd claims (it should be believable).\n- Be concise. \n- Never start with formal openers like \"Hope you're doing well\" (Get right into the email every time).\n- Be nice and inviting.\n- Do not include 'Hi' or 'Regards', this will be added later.\n- Use <br><br> in between each section of email 1.\n\n-----------\n\n# Provided Research:\nCreate the emails by considering the following research:\n\nAbout the prospect: {{ $json.text }}\n\nCompany Name: {{ $('Get row(s) in sheet').item.json.Company }}(ignore any legal suffixes)\n\n\n-----------\n\n# Output format\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"subject\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```. \n- Don't output anything else. \n- Keep the HTML code to a minimum\n- Output the result only with no additional text."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        384,
+        -544
+      ],
+      "id": "37928487-7d81-408a-ac62-df2601fd78dc",
+      "name": "Script Option 3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You’re writing a series of 3 short, casual cold emails to a key decision maker at an aged care facility in Australia. The goal is to spark a warm, credible connection that introduces Evaheld — a platform that simplifies advance care planning and life storytelling in aged care.\n\nHere’s the research about the person and their organisation:\n{{ $json.Research }}\n\nUsing that, write:\n- 1 personalised cold outreach email (email1)\n- 2 warm follow-ups (email2 and email3) spaced about a week apart\n\nUse the most relevant information from the above research and the information below to write the cold emails.\n\nEach email should feel natural and credible — like it’s from a fellow peer connecting on LinkedIn. Casual, warm, and conversational tone. Avoid sounding salesy or scripted. Don’t hard-sell. \n\nNo formal phrases like “Congratulations” — use “Congrats”. Think thoughtful, human connection. Use plain English and focus on relevance and curiosity.\n\nLean on the fact that we’re helping similar companies, always mention how Evaheld boosted ACD completion rates at an aged care provider from ~9% to over 40%.\n\nAdapt language based on organisation type and research input.\n\nInclude a CTA similar to 'Would it be worth a quick 15 min chat this week to see how..........?' (dont mention specific days)\n\nAbout Evaheld:\nEvaheld is an end-user app that drives family engagement around legacy preservation and advance care planning (ACP)—supporting people (and their families) from early dementia or end-of-life through to healthy clients planning ahead. \n\nBenefits of Evaheld (only include those that naturally fit):\n- Increases Advance Care Directive (ACD) completion rates (>40% vs ~9% national average)\n- Combines legacy preservation with advance care planning (ACP) in one platform.\n- Emergency-ready QR codes: Ensure staff can access critical patient directives instantly during emergencies\n- User-friendly: Designed for non-technical seniors, families, and frontline staff\n- Zero-touch onboarding at scale with multi-factor authentication & no IT bottlenecks \n- Dual model: Consumer-facing app + Partner Dashboard with visibility and compliance oversight\n- Centralised hub: Secure, compliant, scalable, eliminates fragmented systems\n- Cost-effective: More affordable than legacy IT, no vendor lock-in \n- Improves family engagement + satisfaction\n- Strengthens audit readiness\n- Enables smoother end-of-life planning and advanced care planning\n- Centralises patient preferences for better care\n- Signals innovation and values-based care\n- Helps meet Aged Care Act 2025 compliance\n\nEvaheld solves these paint points & challenges:\n- Low ACD uptake (~9% nationally) undermining person-centred care\n- Manual, inefficient onboarding causing friction and delays\n- Difficulty deploying compliant digital infrastructure across ecosystems\n- Fragmented systems leading to poor family engagement and human connection\n- Poor emergency readiness due to inaccessible information\n- High IT overhead and vendor lock-in with current platforms\n- Pressure to meet digital transformation and compliance goals\n\nIMPORTANT:\n- DO NOT include any opening or closing salutations, such as 'Tracy, Hi Tracy,' etc — start directly with the message content.\n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, extra punctuation.\n- Be concise. Email1 — 100 words max. Email2 - 75 words max. Email3 - 35 words max.\n\nOutput format:\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"subject\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```\n- Use <br><br> for all line spaces\n- Keep the HTML code to a minimum\n- Output the result only with no additional text\n- Don't output anything else\n\nNow write the emails."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        384,
+        -64
+      ],
+      "id": "573a83c9-afdf-43be-8b13-3df72ca6043c",
+      "name": "Script Option 4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are researching a specific individual and their aged care organisation to help craft a highly personalised outreach email for a healthcare tech company called Evaheld.\n\nEvaheld helps aged care leaders improve person-centred care by digitising advance care planning and life storytelling — helping meet Aged Care Act 2024 compliance, reduce admin load, improve family trust, and streamline critical & emergency care decisions.\n\nPlease search the internet for the following about the person and their facility:\n\n# Target Person:\n- Full name: {{ $json['First Name'] }}{{ $json['Last Name'] }}\n- Organisation: {{ $json.Company }}\n\n# Examples of what to find:\n1. **Recent announcements** from the person or their facility (e.g. new care initiatives, expansions, awards, tech adoption, response to new aged care policies).\n2. **Quotes, interviews, or posts** from the person (e.g. LinkedIn, articles, media).\n3. **Key themes or values** from the facility’s approach (e.g. innovation, family focus, community engagement, person-centred care).\n4. **Any known pain points or opportunities** relevant to advance care planning, compliance, or family trust.\n\n# Output Instructions:\n- Limit total output to **a maximum of 320 words**.\n- Structure your output into 2 sections:\n  - Person Summary: Key role details, 3 of the most relevant insights found.\n  - Organisation Highlights: 3 of the most relevant insights found.\n- Prioritise **relevance** to advance care planning, digital transformation, or values-based care.\n- Include enough details for each insight so that someone can use the information to write a cold email.\n- Avoid fluff or repetition.\n- DO NOT include intros or conclusions in your output."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -64,
+        -352
+      ],
+      "id": "d8e71f5c-0a9a-4b07-9a04-ba22a1daab38",
+      "name": "Prospect Researcher - NEW"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are researching a specific individual and their aged care organisation to help craft a highly personalised outreach email for a healthcare tech company called Evaheld.\n\nEvaheld helps aged care leaders improve person-centred care by digitising advance care planning and life storytelling — helping meet Aged Care Act 2024 compliance, reduce admin load, improve family trust, and streamline critical & emergency care decisions.\n\nPlease search the internet for the following about the person and their facility:\n\n# Target Person:\n- Full name: {{ $json['First Name'] }}{{ $json['Last Name'] }}\n- Organisation: {{ $json['Provider Name'] }}\n\n# Examples of what to find:\n1. **Recent announcements** from the person or their facility (e.g. new care initiatives, expansions, awards, tech adoption, response to new aged care policies).\n2. **Quotes, interviews, or posts** from the person (e.g. LinkedIn, articles, media).\n3. **Key themes or values** from the facility’s approach (e.g. innovation, family focus, community engagement, person-centred care).\n4. **Any known pain points or opportunities** relevant to advance care planning, compliance, or family trust.\n\n# Output Instructions:\n- Structure output as a list of the most **relevant** insights.\n- Limit total output to **a maximum of 230 words**.\n- Only use **verifiable facts** — do not invent quotes, case studies, or exaggerated claims.\n- Avoid fluff or repetition. DO NOT include intros or conclusions in your output.\n- Do not mention what you could NOT find."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "00bf798f-d7cc-4ed5-a522-b6a92edcbc16",
+      "name": "Prospect Researcher - NEW ALT 1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You’re writing a series of 3 short, casual cold emails to a key decision maker at an aged care facility in Australia. The goal is to spark a warm, credible connection that introduces Evaheld — a platform that simplifies advance care planning and life storytelling in aged care.\n\nHere’s the research about the person and their organisation:\n{{ $json.text }}\n\nUsing that, write:\n- 1 personalised cold outreach email (email1)\n- 2 warm follow-ups (email2 and email3) spaced about a week apart\n\nUse the most relevant information from the research to write the emails.\n\nEach email should feel natural and credible — like it’s from a fellow peer connecting on LinkedIn. Casual, warm, and conversational tone. Avoid sounding salesy or scripted. Don’t hard-sell. \n\nUse contractions and casual phrases (e.g. \"Congrats\", \"Saw you just...\", \"Worth chatting?\")\n\nThink thoughtful, peer-to-peer connection. Use plain English and focus on relevance and curiosity.\n\nLean on the fact that we’re helping similar companies, but **don’t name-drop or use made-up stats or case studies**.\n\nAdapt language based on organisation type and research input\n  - Residential Aged Care → compliance, resident experience, family engagement, staff efficiency\n  - Hospital/Aged Care Network → multi-site coordination, instant access to patient directives, reducing emergency risk\n  - Community Care → home visit efficiency, consistent documentation, diverse client needs\n  - Specialist Facility (e.g. Dementia Care) → personalised care planning, reduced admin load, values-based care\n  - Speak to shared pain points like meeting compliance standards, cutting admin time, improving family trust, ensuring audit readiness, and enabling more personalised care delivery.\n\nInclude a CTA similar to:\n- “Would it be worth a quick 15-min chat this week to see if we can help grow your pipeline?”\n\nAbout Evaheld:\nEvaheld eliminates the administrative burden and compliance risks of advance care planning while ensuring staff can access critical patient directives instantly during emergencies—helping meet Aged Care Act 2024 compliance, growing family trust and improving care outcomes across the entire organisation.\n\nBenefits (only include those that naturally fit):\n- Helps meet Aged Care Act 2024 compliance\n- Reduces staff admin time\n- Improves family engagement + satisfaction\n- Strengthens audit readiness\n- Enables smoother end-of-life planning\n- Centralises patient preferences for better care\n- Signals innovation and values-based care\n- Improves experience → boosts occupancy\n\nIMPORTANT:\n- Do NOT include a sign off from anyone (I will add this later)\n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, extra punctuation.\n- Be concise — 140 words max per email.\n- Avoid formal intros, fluff, or robotic phrasing\n\nOutput format:\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"subject\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```\n- Don't output anything else\n- Keep the HTML code to a minimum\n- Output the result only with no additional text\n\nNow write the emails.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        384,
+        -352
+      ],
+      "id": "c8133dce-8082-42a0-843b-80f6063552a4",
+      "name": "Script Option 5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Prospect details:\nName: {{ $json['First Name'] }}{{ $json['Last Name'] }}\nOrganisation Name: {{ $json.Company }}\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a web researcher for the business development team at Evaheld."
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=You are researching a senior leader (CFO, CEO, Executive Director, Chief Executive Seniors Living, Senior Care Manager, or similar) at an aged care facility in Australia. This research will be used to craft a highly personalised cold email by Evaheld.\n\nEvaheld eliminates the administrative burden and compliance risks of advance care planning while ensuring staff can access critical patient directives instantly during emergencies—helping meet Aged Care Act 2024 compliance, growing family trust, and improving care outcomes across the entire organisation.\n\n# Examples of what to Find:\n\n1. **Prospect-specific content or signals**\n   - LinkedIn posts, authored articles, podcasts, webinars, interviews, notable quotes or public comments, media features or press mentions where the prospect is directly quoted or referenced.\n   - Specific projects, programs, partnerships, initiatives, or campaigns they were involved in or led.\n   - Prospect’s operational or strategic priorities — anything that reveals what they’re trying to achieve in aged care this year (e.g. preparing for Aged Care Act 2024 compliance, improving resident experience, enhancing family engagement, modernising care documentation).\n\n2. **Organisation Context**\n   - Type of aged care organisation (residential aged care, hospital network, community care provider, specialist dementia facility, etc.).\n   - Size of the organisation and number of facilities or sites (if available).\n   - Growth or transformation signals (e.g. funding, expansion, new facility openings, new care programs, technology adoption, partnerships, awards).\n   - Relevant operational challenges & opportunities — sector-specific issues or pain points they might face (e.g. compliance readiness, staffing shortages, high admin workload, family satisfaction, audit preparation).\n\n# Output Instructions:\n- Structure output as a list of the most **relevant** insights.\n- Limit total output to **a maximum of 320 words**.\n- Only use **verifiable facts** — do not invent quotes, case studies, or exaggerated claims.\n- Avoid fluff or repetition. DO NOT include intros or conclusions in your output.\n- Do not mention what you could NOT find."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -864,
+        -400
+      ],
+      "id": "b037e33c-566b-4afa-acbb-1703a2497482",
+      "name": "Prospect Researcher - NEW ALT 2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You’re writing a series of 3 short, casual cold emails to a key decision maker at an aged care facility in Australia. This may be a residential aged care provider, hospital network, community care organisation, or specialist dementia facility. \n\nThe goal is to spark a warm, credible connection that introduces Evaheld — a digital platform that simplifies advance care planning and life storytelling, helping leaders deliver compliant, personalised care without the admin overload.\n\nHere’s the research about the person and their organisation:\nProspect:\n{{ $('Get row(s) in sheet').item.json['First Name'] }}{{ $('Get row(s) in sheet').item.json['Last Name'] }}\nResearch:\n{{ $json.text }}\n\nUsing that, write:\n- 1 personalised cold outreach email (email1)\n- 2 warm follow-ups (email2 and email3) spaced about a week apart\n\nUse the most relevant information from the research to write the emails.\n\nEach email should feel natural and credible — like it’s from a fellow peer connecting on LinkedIn. Casual, warm, and conversational tone. Avoid sounding salesy or scripted. Don’t hard-sell.\n\nUse contractions and casual phrases (e.g. \"Congrats\", \"Saw you just...\", \"Worth chatting?\")\n\nThink thoughtful, peer-to-peer connection. Use plain English and focus on relevance and curiosity.\n\nLean on the fact that we’re helping similar organisations, but **don’t name-drop or use made-up stats or case studies**.\n\nAdapt language based on organisation type and research input\n  - Residential Aged Care → compliance, resident experience, family engagement, staff efficiency\n  - Hospital/Aged Care Network → multi-site coordination, instant access to patient directives, reducing emergency risk\n  - Community Care → home visit efficiency, consistent documentation, diverse client needs\n  - Specialist Facility (e.g. Dementia Care) → personalised care planning, reduced admin load, values-based care\n- Speak to shared pain points like meeting compliance standards, cutting admin time, improving family trust, ensuring audit readiness, and enabling more personalised care delivery.\n\nInclude a CTA similar to:\n- “Would it be worth a quick 15-min chat this week to see if we can help make care more compliant and person-centred?”\n\nAbout Evaheld:\nEvaheld eliminates the administrative burden and compliance risks of advance care planning while ensuring staff can access critical patient directives instantly during emergencies—helping meet Aged Care Act 2024 compliance, growing family trust, and improving care outcomes across the entire organisation.\n\nBenefits (only include those that naturally fit):\n- Helps meet Aged Care Act 2024 compliance\n- Reduces staff admin time\n- Improves family engagement + satisfaction\n- Strengthens audit readiness\n- Enables smoother end-of-life planning\n- Centralises patient preferences for better care\n- Signals innovation and values-based care\n- Improves experience → boosts occupancy\n\nIMPORTANT:\n- Do NOT include a sign off from anyone (I will add this later)\n- Avoid images, attachments, videos, custom code, spammy words above, bullet points, extra punctuation.\n- Be concise — 140 words max per email.\n- Avoid formal intros, fluff, or robotic phrasing\n\nOutput format:\nYour output must follow this JSON format: \n\n{\n  \"email1\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"subject\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email2\": {\n    \"body\": \"HTML-HERE\"\n  },\n  \"email3\": {\n    \"body\": \"HTML-HERE\"\n  }\n}\n\n- Don't wrap the output in ```json```\n- Don't output anything else\n- Keep the HTML code to a minimum\n- Output the result only with no additional text\n\nNow write the emails.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -480,
+        -400
+      ],
+      "id": "49ac8ed3-f7af-401d-b753-2edc6a8958c4",
+      "name": "Script Option 6"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 2500,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        384,
+        144
+      ],
+      "id": "6297f1ee-9a12-4bce-b3b3-29b1cf560135",
+      "name": "OpenRouter Chat Model4",
+      "credentials": {
+        "openRouterApi": {
+          "id": "UpV21Z3vKMd1YHwz",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Hiring Sales Staff": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"hook1\": {\n    \"body\": \"I see you’re growing your sales team with a Senior Account Executive focused on enterprise clients. That’s a big step for Higher Logic’s growth.\"\n  },\n  \"hook2\": {\n    \"body\": \"Most companies hiring for enterprise sales roles struggle with keeping their pipeline full enough to support the new headcount.\"\n  },\n  \"hook3\": {\n    \"body\": \"Not sure if you saw my earlier note — but since you're bringing on a Senior Account Executive, I thought you might find this interesting.\"\n  }\n}",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Scrape Profiles + Posts - Relevance AI1": {
+      "main": [
+        [
+          {
+            "node": "Research Company - Perplexity1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Company - Perplexity1": {
+      "main": [
+        [
+          {
+            "node": "Analyse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse": {
+      "main": [
+        [
+          {
+            "node": "Email #1 #2 #3 (Original format)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email #1 #2 #3 (Original format)": {
+      "main": [
+        []
+      ]
+    },
+    "Split emails": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch": {
+      "main": [
+        []
+      ]
+    },
+    "Scrape Profiles + Posts - Relevance AI": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Script Option 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        []
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Researcher": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Original Hooks",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Original Hooks": {
+      "main": [
+        []
+      ]
+    },
+    "Hiring Sales Staff": {
+      "main": [
+        []
+      ]
+    },
+    "sales hiring category": {
+      "main": [
+        []
+      ]
+    },
+    "Script Option 1": {
+      "main": [
+        []
+      ]
+    },
+    "Script Option 3": {
+      "main": [
+        []
+      ]
+    },
+    "Script Option 4": {
+      "main": [
+        [
+          {
+            "node": "Split emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Researcher - NEW": {
+      "main": [
+        []
+      ]
+    },
+    "Prospect Researcher - NEW ALT 1": {
+      "main": [
+        []
+      ]
+    },
+    "Script Option 5": {
+      "main": [
+        []
+      ]
+    },
+    "Prospect Researcher - NEW ALT 2": {
+      "main": [
+        []
+      ]
+    },
+    "Script Option 6": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Script Option 4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Australia/Sydney",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "5870f74c-172b-49f2-b0d8-bd71bc52d2d6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "322e18291beaac1827d61ca6c4684c8a05d100792cdd0f223b94c8c48885528d"
+  },
+  "id": "evRyv40bE9r3IzSy",
+  "tags": [
+    {
+      "updatedAt": "2025-04-27T00:39:47.952Z",
+      "createdAt": "2025-04-27T00:39:47.952Z",
+      "id": "Iz4IVJWHR3QVtbCH",
+      "name": "sales system"
+    },
+    {
+      "updatedAt": "2025-05-22T05:18:51.557Z",
+      "createdAt": "2025-05-22T05:18:51.557Z",
+      "id": "lfVESmGFxDgQ6Tid",
+      "name": "Knnektr"
+    },
+    {
+      "updatedAt": "2025-06-28T00:57:34.191Z",
+      "createdAt": "2025-06-28T00:57:34.191Z",
+      "id": "mOMb8pKU4RYyCqH6",
+      "name": "Email Prep"
+    }
+  ]
+}
