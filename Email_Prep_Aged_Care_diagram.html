@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Prep - Aged Care — n8n Workflow Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8f9fa;
+    color: #1a1a2e;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: #666; margin-top: 0; margin-bottom: 20px; }
+  .mermaid {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px 16px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1px solid #333;
+  }
+  h2 { font-size: 1.15rem; margin-top: 28px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+  .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 14px; border-radius: 4px; font-size: 0.85rem; margin: 16px 0; }
+  .disconnected-section { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<h1>Email Prep — Aged Care</h1>
+<p class="subtitle">n8n workflow — multi-variant cold email generation for aged care outreach (Knnektr / LeadsAlways / Evaheld)</p>
+
+<div class="note">
+<strong>Note:</strong> This workflow has <strong>one active execution path</strong> (top section) and <strong>many disconnected experimental branches</strong> (bottom sections) that produce output but feed into nothing. Disconnected nodes are likely A/B test variants that were unplugged.
+</div>
+
+<h2>Active Execution Path</h2>
+
+<div class="mermaid">
+flowchart LR
+
+    TRIGGER["<b>Manual Trigger</b><br/>When clicking 'Test workflow'"]
+    SHEET_READ["<b>Get row(s) in sheet</b><br/>Google Sheets<br/>Ready=Yes, Processed=No"]
+    LIMIT["<b>Limit</b><br/>max 500 items"]
+    LOOP["<b>Loop Over Items</b><br/>SplitInBatches<br/>output 1 → "]
+    LLM4["<b>OpenRouter Chat Model 4</b><br/>via OpenRouter<br/>max 2500 tokens, temp 0.7"]
+    SCRIPT4["<b>Script Option 4</b><br/>LLM Chain<br/>writes 3 casual cold emails<br/>introducing Evaheld"]
+    SPLIT["<b>Split emails</b><br/>Set node<br/>parses JSON, strips ```json```"]
+    SHEET_WRITE["<b>Append or update row in sheet</b><br/>Google Sheets<br/>writes V2 Subject, V2 Email #1/#2/#3<br/>sets Processed=Yes"]
+
+    TRIGGER --> SHEET_READ
+    SHEET_READ --> LIMIT
+    LIMIT --> LOOP
+    LOOP -- "output 1" --> SCRIPT4
+    LLM4 -- "ai_languageModel" --> SCRIPT4
+    SCRIPT4 --> SPLIT
+    SPLIT --> SHEET_WRITE
+    SHEET_WRITE -. "loops back" .-> LOOP
+
+    style TRIGGER fill:#7c3aed,color:#fff,stroke:#6d28d9
+    style SHEET_READ fill:#059669,color:#fff,stroke:#047857
+    style LIMIT fill:#6b7280,color:#fff,stroke:#4b5563
+    style LOOP fill:#6b7280,color:#fff,stroke:#4b5563
+    style SHEET_WRITE fill:#059669,color:#fff,stroke:#047857
+    style LLM4 fill:#ea580c,color:#fff,stroke:#c2410c
+    style SCRIPT4 fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style SPLIT fill:#0891b2,color:#fff,stroke:#0e7490
+</div>
+
+<h2>Disconnected / Experimental Branches</h2>
+
+<div class="mermaid disconnected-section">
+flowchart LR
+
+    subgraph A["Branch A: Knnektr Cold Email (3-email sequence)"]
+        RELEVANCE["<b>Scrape Profiles + Posts</b><br/>Relevance AI<br/>LinkedIn scraper"]
+        PERPLEXITY["<b>Research Company</b><br/>Perplexity (sonar)<br/>web research"]
+        ANALYSE["<b>Analyse</b><br/>OpenAI GPT-4.1-mini<br/>finds personalization<br/>+ pain points"]
+        EMAIL123["<b>Email #1 #2 #3</b><br/>OpenRouter Claude 3.7<br/>writes 3-email sequence<br/>Knnektr cold outreach"]
+        RELEVANCE --> PERPLEXITY --> ANALYSE --> EMAIL123
+        EMAIL123 -. "❌ goes nowhere" .-> DEAD1((" "))
+    end
+
+    subgraph B["Branch B: LeadsAlways Hooks (sales managers)"]
+        LLM1["<b>OpenRouter Chat Model</b><br/>Claude Sonnet 4<br/>temp 0.6, max 3000"]
+        BASIC["<b>Basic LLM Chain</b><br/>generates 3 hooks<br/>for sales managers"]
+        LLM2["<b>OpenRouter Chat Model 2</b><br/>Claude 3.7 Sonnet<br/>temp 0.5, max 3000"]
+        ORIG_HOOKS["<b>Original Hooks</b><br/>generates 4 hooks<br/>from templates"]
+        LLM1 --> BASIC
+        LLM2 --> ORIG_HOOKS
+        BASIC -. "❌ goes nowhere" .-> DEAD2((" "))
+        ORIG_HOOKS -. "❌ goes nowhere" .-> DEAD3((" "))
+    end
+
+    subgraph C["Branch C: Hiring Sales Staff"]
+        CAT["<b>sales hiring category</b><br/>OpenAI GPT-4.1-mini<br/>classifies sales role<br/>temp 0.6"]
+        HIRING["<b>Hiring Sales Staff</b><br/>OpenAI GPT-4.1-mini<br/>generates 3 hooks<br/>for hiring companies<br/>temp 0.7"]
+        CAT -. "❌" .-> DEAD4((" "))
+        HIRING -. "❌" .-> DEAD5((" "))
+    end
+
+    style RELEVANCE fill:#f59e0b,color:#fff,stroke:#d97706
+    style PERPLEXITY fill:#f59e0b,color:#fff,stroke:#d97706
+    style ANALYSE fill:#ea580c,color:#fff,stroke:#c2410c
+    style EMAIL123 fill:#ea580c,color:#fff,stroke:#c2410c
+    style LLM1 fill:#ea580c,color:#fff,stroke:#c2410c
+    style BASIC fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style LLM2 fill:#ea580c,color:#fff,stroke:#c2410c
+    style ORIG_HOOKS fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style CAT fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style HIRING fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style DEAD1 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style DEAD2 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style DEAD3 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style DEAD4 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style DEAD5 fill:#dc2626,color:#fff,stroke:#b91c1c
+</div>
+
+<h2>Disconnected Prospect Researchers</h2>
+
+<div class="mermaid disconnected-section">
+flowchart LR
+
+    subgraph R["5 Prospect Researcher variants — all disconnected"]
+        PR1["<b>Prospect Researcher</b><br/>LLM Chain<br/>research for Evaheld<br/>max 320 words"]
+        PRNEW["<b>Prospect Researcher - NEW</b><br/>LLM Chain<br/>web researcher variant<br/>max 320 words"]
+        PRALT1["<b>Prospect Researcher<br/>- NEW ALT 1</b><br/>LLM Chain<br/>max 230 words<br/>verifiable facts only"]
+        PRALT2["<b>Prospect Researcher<br/>- NEW ALT 2</b><br/>LLM Chain<br/>CFO/CEO/Exec Director<br/>max 320 words"]
+    end
+
+    subgraph S["Disconnected Script Variants"]
+        S1["<b>Script Option 1</b><br/>LLM Chain<br/>cold email for Evaheld<br/>120 words max"]
+        S3["<b>Script Option 3</b><br/>LLM Chain<br/>template-based emails<br/>115 words max"]
+        S5["<b>Script Option 5</b><br/>LLM Chain<br/>casual peer-to-peer<br/>140 words max"]
+        S6["<b>Script Option 6</b><br/>LLM Chain<br/>linked to ALT 2 research<br/>140 words max"]
+    end
+
+    PR1 -. "❌" .-> D1((" "))
+    PRNEW -. "❌" .-> D2((" "))
+    PRALT1 -. "❌" .-> D3((" "))
+    PRALT2 -. "❌" .-> D4((" "))
+    S1 -. "❌" .-> D5((" "))
+    S3 -. "❌" .-> D6((" "))
+    S5 -. "❌" .-> D7((" "))
+    S6 -. "❌" .-> D8((" "))
+
+    style PR1 fill:#a78bfa,color:#fff,stroke:#7c3aed
+    style PRNEW fill:#a78bfa,color:#fff,stroke:#7c3aed
+    style PRALT1 fill:#a78bfa,color:#fff,stroke:#7c3aed
+    style PRALT2 fill:#a78bfa,color:#fff,stroke:#7c3aed
+    style S1 fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style S3 fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style S5 fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style S6 fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style D1 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D2 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D3 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D4 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D5 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D6 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D7 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style D8 fill:#dc2626,color:#fff,stroke:#b91c1c
+</div>
+
+<h2>Other Standalone Nodes (completely disconnected)</h2>
+
+<div class="mermaid disconnected-section">
+flowchart LR
+    BATCH["<b>Batch</b><br/>Code node<br/>assigns B1/B2/B3<br/>cycling batch numbers"]
+    RELEVANCE2["<b>Scrape Profiles + Posts<br/>- Relevance AI</b><br/>HTTP Request<br/>LinkedIn scraper (copy)"]
+    TRUSTPILOT["<b>TrustPilot Reviews<br/>(1-3 Stars)</b><br/>Apify API<br/>scrapes negative reviews"]
+
+    BATCH -. "❌" .-> X1((" "))
+    RELEVANCE2 -. "❌" .-> X2((" "))
+    TRUSTPILOT -. "❌" .-> X3((" "))
+
+    style BATCH fill:#6b7280,color:#fff,stroke:#4b5563
+    style RELEVANCE2 fill:#f59e0b,color:#fff,stroke:#d97706
+    style TRUSTPILOT fill:#f59e0b,color:#fff,stroke:#d97706
+    style X1 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style X2 fill:#dc2626,color:#fff,stroke:#b91c1c
+    style X3 fill:#dc2626,color:#fff,stroke:#b91c1c
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#7c3aed"></div> Entry</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#059669"></div> Google Sheets I/O</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#6b7280"></div> Utility (limit/loop/batch)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ea580c"></div> LLM / Model</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2563eb"></div> LLM Chain / Prompt</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f59e0b"></div> External API call</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#0891b2"></div> Data transform</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#a78bfa"></div> Researcher</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc2626"></div> Dead end</div>
+</div>
+
+<h2>Active Path — Step by Step</h2>
+<ol>
+  <li><strong>Manual Trigger</strong> — operator clicks "Test workflow" to start.</li>
+  <li><strong>Get row(s) in sheet</strong> — reads from Google Sheets ("Aged Care Leads" tab), filtering rows where <em>Ready = Yes</em> and <em>Processed = No</em>.</li>
+  <li><strong>Limit</strong> — caps at 500 rows per run.</li>
+  <li><strong>Loop Over Items</strong> — SplitInBatches processes each row individually. Output 1 feeds the script generator.</li>
+  <li><strong>Script Option 4</strong> — an LLM Chain (powered by OpenRouter Chat Model 4) that writes 3 casual, peer-to-peer cold emails introducing <strong>Evaheld</strong> (advance care planning platform). Uses prospect research data. Outputs JSON with subject + 3 email bodies.</li>
+  <li><strong>Split emails</strong> — a Set node that strips ```json``` wrappers from the LLM output.</li>
+  <li><strong>Append or update row in sheet</strong> — writes the generated V2 Subject, V2 Email #1/#2/#3 back to the same Google Sheet, matched on Email, and sets Processed = Yes.</li>
+  <li>Loops back to <strong>Loop Over Items</strong> for the next row.</li>
+</ol>
+
+<h2>Summary</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; font-size:0.9rem;">
+  <tr><th>Category</th><th>Count</th><th>Details</th></tr>
+  <tr><td>Total nodes</td><td><strong>28</strong></td><td></td></tr>
+  <tr><td>Active path nodes</td><td><strong>8</strong></td><td>Trigger → Sheets Read → Limit → Loop → Script 4 → Split → Sheets Write + LLM model</td></tr>
+  <tr><td>LLM models</td><td><strong>6</strong></td><td>GPT-4.1-mini (×3), Claude 3.7 Sonnet (×2), Claude Sonnet 4 (×1), OpenRouter (×4)</td></tr>
+  <tr><td>LLM chains / prompts</td><td><strong>12</strong></td><td>10 cold-email/hook generators + 2 researchers</td></tr>
+  <tr><td>Disconnected nodes</td><td><strong>20</strong></td><td>Experimental variants with output going nowhere</td></tr>
+  <tr><td>External APIs</td><td><strong>3</strong></td><td>Relevance AI, Perplexity, Apify TrustPilot (all in disconnected branches)</td></tr>
+  <tr><td>Google Sheets</td><td><strong>2</strong></td><td>Read (filtered) + Write (appendOrUpdate)</td></tr>
+  <tr><td>Brands targeted</td><td><strong>3</strong></td><td>Knnektr, LeadsAlways, Evaheld — across different disconnected branches</td></tr>
+</table>
+
+</body>
+</html>
