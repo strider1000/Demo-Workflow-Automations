@@ -4,8 +4,9 @@
 > Analyze a reference ad, recreate every shot with your product, and assemble a finished commercial — with human approval at every step.
 
 <p align="center">
-  <em>🚧 Demo video coming soon — add a 30-second screen recording here showing a full run</em>
-  <!-- <img src="docs/demo.gif" width="720" alt="Creative Cloner demo"> -->
+  <a href="https://github.com/strider1000/Demo-Workflow-Automations/releases/tag/v1.0">
+    <b>▶️ Watch the demos</b> — BYD Moon & AETOS Offroad, full pipeline
+  </a>
 </p>
 
 ---
@@ -266,9 +267,8 @@ Transparent per-unit pricing, shown to the user *before* each generation step:
 
 | Project | Reference | Scenes | Output | Notes |
 |---|---|---|---|---|
-| **BYD** | Car drifting ad | 7 | `outputs/BYD_final.mp4` | BMW E30 M3 → BYD SUV, 1980s VHS style |
-| **BYD Moon** | Same reference, different direction | 7 | `outputs/BYD_Moon_final_with_logo.mp4` | Added segmented voiceover + logo overlay |
-| **AETOS Offroad** | SUV adventure ad | 8 | *(in progress)* | Full pipeline with variation downloads |
+| **BYD Moon** | Car drifting ad | 7 | [📥 Download](https://github.com/strider1000/Demo-Workflow-Automations/releases/download/v1.0/BYD_Moon_final.mp4) (142MB) | BMW E30 M3 → BYD SUV, segmented VO + logo |
+| **AETOS Offroad** | SUV adventure ad | 7 | [📥 Download](https://github.com/strider1000/Demo-Workflow-Automations/releases/download/v1.0/aetos_offroad_final.mp4) (34MB) | Full pipeline with variation downloads |
 
 ---
 
