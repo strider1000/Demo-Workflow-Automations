@@ -15,7 +15,7 @@
 Customer support AI that just "sounds good" isn't enough — it needs to **do things**. Book appointments. Look up service details. Capture contact info. Search the web for answers. Voice RAG Agent combines a conversational AI agent with real tools, all triggered through a single webhook (designed to sit behind a voice interface like Vapi, Retell, or a custom phone gateway):
 
 1. **Receive** a voice-transcribed query via webhook
-2. **Understand** intent using Gemini Flash 2.0
+2. **Understand** intent using Gemini model
 3. **Retrieve** relevant information from a Supabase vector store (RAG over your service docs)
 4. **Act** using tools — check calendar availability, book meetings, store contact info, search the web
 5. **Respond** with a concise, context-aware answer
@@ -33,7 +33,7 @@ flowchart TB
         WEBHOOK["Webhook\nPOST /support_agent"]
     end
 
-    subgraph Agent["🧠 AI Agent (Gemini Flash 2.0)"]
+    subgraph Agent["🧠 AI Agent (Gemini model)"]
         ROUTER["Intent Router\n(tool selection)"]
     end
 
@@ -108,7 +108,7 @@ You'll need accounts at:
 
 | Service | Used for | Approx. cost |
 |---|---|---|
-| [Google AI Studio](https://aistudio.google.com) | Gemini Flash 2.0 (agent brain) | Free tier available |
+| [Google AI Studio](https://aistudio.google.com) | Gemini model (agent brain) | Free tier available |
 | [OpenAI](https://platform.openai.com) | Embeddings (text → vectors) | ~$0.10/1M tokens |
 | [Supabase](https://supabase.com) | Vector store (pgvector + documents) | Free tier |
 | [Google Calendar](https://console.cloud.google.com) | Availability checking + booking | Free |
@@ -192,7 +192,7 @@ voice-rag-agent/
 | Node | Role | Why it matters |
 |---|---|---|
 | `Webhook` | Entry point | POST endpoint that receives voice-transcribed queries — the gateway from voice platform to AI |
-| `AI Agent` | Brain | Gemini Flash 2.0-powered agent that understands intent, selects tools, and constructs responses |
+| `AI Agent` | Brain | Gemini model-powered agent that understands intent, selects tools, and constructs responses |
 | `Supabase Vector Store` | Knowledge base | Stores your service documentation as embeddings — RAG retrieval for accurate answers |
 | `Embeddings OpenAI` | Text → vectors | Converts document content and queries into 1536-dimension vectors for similarity search |
 | `Get_Available_Slots` | Calendar check | Real Google Calendar availability — the agent can tell users actual free slots, not fake ones |
@@ -244,7 +244,7 @@ Per-conversation cost estimate (typical 3-turn conversation):
 
 | Component | Provider | Cost/turn |
 |---|---|---|
-| Agent LLM | Gemini Flash 2.0 | Free (generous free tier) |
+| Agent LLM | Gemini model | Free (generous free tier) |
 | Embeddings query | OpenAI | <$0.001 |
 | Calendar check | Google | Free |
 | Calendar booking | Google | Free |
@@ -256,9 +256,9 @@ Per-conversation cost estimate (typical 3-turn conversation):
 
 ## 🤔 Design Decisions & Trade-offs
 
-### Why Gemini Flash instead of GPT-4?
+### Why Gemini for the agent?
 
-Gemini Flash 2.0 is fast (~200ms for tool selection), free for moderate usage, and natively supports function calling. For an agent that needs to route between 5 tools and respond quickly (voice conversations can't tolerate 3-second latency), Flash is the right call. GPT-4 would produce slightly better responses but at 10-50x the cost and 2-3x the latency.
+The Gemini model is fast (~200ms for tool selection), free for moderate usage, and natively supports function calling. For an agent that needs to route between 5 tools and respond quickly (voice conversations can't tolerate 3-second latency), a lightweight model is the right call. A larger model would produce slightly better responses but at 10-50x the cost and 2-3x the latency.
 
 ### Why Supabase pgvector instead of Pinecone/Weaviate?
 
@@ -298,5 +298,5 @@ MIT — use this for your own projects, commercial or personal.
 ---
 
 <p align="center">
-  <sub>Built with n8n · Powered by Gemini Flash 2.0, Supabase pgvector, OpenAI Embeddings & Google Calendar</sub>
+  <sub>Built with n8n · Powered by Gemini model, Supabase pgvector, OpenAI Embeddings & Google Calendar</sub>
 </p>

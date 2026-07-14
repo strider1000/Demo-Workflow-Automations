@@ -16,8 +16,8 @@ Cold email outreach at scale has two bottlenecks: **research** and **personalisa
 
 1. **Scrape** the prospect's LinkedIn profile and recent posts (Relevance AI)
 2. **Research** their company via web search (Perplexity)
-3. **Analyse** the research to find personalisation opportunities and pain points (GPT-4.1-mini)
-4. **Generate** a 3-email cold sequence with personalised hooks, subject lines, and follow-ups (Claude 3.7 Sonnet via OpenRouter)
+3. **Analyse** the research to find personalisation opportunities and pain points (OpenAI model)
+4. **Generate** a 3-email cold sequence with personalised hooks, subject lines, and follow-ups (Claude model via OpenRouter)
 5. **Write** everything back to Google Sheets — ready for review and send
 
 **The key insight:** Multiple script variants target different outreach strategies (aged care, sales hiring, generic B2B) — pick the one that fits your campaign, or run them all and A/B test.
@@ -39,13 +39,13 @@ flowchart TB
     end
 
     subgraph Phase2["🧠 Phase 2: Analyse"]
-        GPT_ANALYSE["GPT-4.1-mini\nPain Point & Personalisation Analysis"]
+        GPT_ANALYSE["OpenAI Model\nPain Point & Personalisation Analysis"]
     end
 
     subgraph Phase3["✍️ Phase 3: Generate"]
-        CLAUDE["Claude 3.7 Sonnet via OpenRouter\n3-Email Sequence Writer"]
-        HOOKS["GPT-4.1-mini\nPersonalised Hooks Generator"]
-        SALES_CAT["GPT-4.1-mini\nSales Hiring Category Classifier"]
+        CLAUDE["Claude Model via OpenRouter\n3-Email Sequence Writer"]
+        HOOKS["OpenAI Model\nPersonalised Hooks Generator"]
+        SALES_CAT["OpenAI Model\nSales Hiring Category Classifier"]
     end
 
     subgraph Output["📤 Output"]
@@ -75,7 +75,7 @@ The workflow contains **multiple script variants** — different combinations of
 - **Switch strategies per campaign** without rebuilding the workflow
 - **Iterate fast** — duplicate the best-performing variant and tweak the prompt
 
-Active variants target aged care facility decision-makers (for Evaheld), sales leaders at growing tech companies, and generic B2B outreach.
+Active variants target aged care facility decision-makers, sales leaders at growing tech companies, and generic B2B outreach.
 
 ---
 
@@ -102,8 +102,8 @@ You'll need accounts at:
 |---|---|---|
 | [Relevance AI](https://relevanceai.com) | LinkedIn profile scraping | Usage-based credits |
 | [Perplexity](https://perplexity.ai) | Company web research | Pay-per-query |
-| [OpenRouter](https://openrouter.ai) | Claude 3.7 Sonnet for email writing | ~$0.015/1K tokens |
-| [OpenAI](https://platform.openai.com) | GPT-4.1-mini analysis & hooks | ~$0.15/1M input tokens |
+| [OpenRouter](https://openrouter.ai) | Claude model for email writing | ~$0.015/1K tokens |
+| [OpenAI](https://platform.openai.com) | OpenAI model for analysis & hooks | ~$0.15/1M input tokens |
 | [Google Sheets](https://console.cloud.google.com) | Prospect data source & output | Free tier |
 | [Apify](https://apify.com) (optional) | TrustPilot review scraping | Usage-based |
 
@@ -155,8 +155,8 @@ email-campaign-prep/
 | `Get row(s) in sheet` | Prospect source | Filters prospects by Ready/Processed flags — idempotent, won't re-process the same lead |
 | `Scrape Profiles + Posts - Relevance AI` | LinkedIn data | Gets full profile JSON + recent posts (last 30 days) — the richest personalisation source |
 | `Research Company - Perplexity` | Web research | Finds company news, funding, expansions — context the LinkedIn profile doesn't have |
-| `Analyse` (GPT-4.1-mini) | Research synthesis | Extracts the top personalisation opportunities and pain points from raw research |
-| `Email #1 #2 #3` (Claude 3.7 Sonnet) | Email writer | Generates all 3 emails in one call — subject line, body, follow-ups |
+| `Analyse` (OpenAI model) | Research synthesis | Extracts the top personalisation opportunities and pain points from raw research |
+| `Email #1 #2 #3` (Claude model) | Email writer | Generates all 3 emails in one call — subject line, body, follow-ups |
 | `Append or update row in sheet` | Output | Writes subject + 3 emails back to the sheet, sets Processed=Yes |
 
 ---
@@ -193,8 +193,8 @@ Transparent per-prospect pricing:
 |---|---|---|
 | LinkedIn scrape | Relevance AI | ~$0.01 (credit-based) |
 | Company research | Perplexity Sonar | ~$0.01 |
-| Analysis | GPT-4.1-mini | <$0.001 |
-| Email generation | Claude 3.7 Sonnet | ~$0.003 |
+| Analysis | OpenAI model | <$0.001 |
+| Email generation | Claude model | ~$0.003 |
 | **Total** | | **~$0.025/prospect** |
 
 **Batch of 100 prospects:** ~$2.50. Manual research equivalent: ~25 hours.
@@ -207,11 +207,11 @@ The workflow ships with multiple script variants for different outreach contexts
 
 | Variant | Target | Tone | Best for |
 |---|---|---|---|
-| **Script Option 1** | Aged care leaders (Evaheld) | Casual peer-to-peer, warm connection | Introducing a new product to a known industry |
-| **Script Option 3** | Aged care leaders (Evaheld) | Template-driven with personalisation slot | Faster execution, still personalised |
-| **Script Option 4** | Aged care leaders (Evaheld) | Research-driven with facility-type adaptation | Most tailored — adapts tone to residential vs. hospital vs. community care |
-| **Script Option 5** | Aged care leaders (Evaheld) | Lean version of Option 4 | Lower token cost, faster |
-| **Script Option 6** | Aged care leaders (Evaheld) | Organisation-type aware | Variant with different research prompts |
+| **Script Option 1** | Aged care leaders | Casual peer-to-peer, warm connection | Introducing a new product to a known industry |
+| **Script Option 3** | Aged care leaders | Template-driven with personalisation slot | Faster execution, still personalised |
+| **Script Option 4** | Aged care leaders | Research-driven with facility-type adaptation | Most tailored — adapts tone to residential vs. hospital vs. community care |
+| **Script Option 5** | Aged care leaders | Lean version of Option 4 | Lower token cost, faster |
+| **Script Option 6** | Aged care leaders | Organisation-type aware | Variant with different research prompts |
 | **Hiring Sales Staff** | Tech companies hiring sales roles | Hiring-aware, pipeline-focused | Companies in active sales expansion |
 | **Original Hooks** | Generic B2B (LeadsAlways) | Warm founder-to-founder | Broad B2B outreach |
 | **Basic LLM Chain** | Generic B2B (LeadsAlways) | Template hooks | Quick hooks for volume outreach |
@@ -228,10 +228,6 @@ The workflow ships with multiple script variants for different outreach contexts
 | Pure Python/Node script | Testable, version-controllable, portable | Must build credential management, retry logic, UI for non-technical users |
 
 n8n wins for this use case because email campaigns are **operational workflows** — they need a UI for non-technical team members to review, adjust filters, and re-run. The visual editor makes it easy to A/B test script variants by swapping connections.
-
-### Why Claude 3.7 Sonnet for email writing?
-
-Email writing is a high-stakes creative task — the difference between a reply and an ignore is often a single awkward phrase. Claude 3.7 Sonnet consistently produces more natural, less "AI-sounding" prose than GPT-4.1-mini, especially for the nuanced casual-peer tone these emails require. The ~2x cost premium is worth it for the reply-rate improvement.
 
 ### Why multiple script variants in one workflow?
 
@@ -259,5 +255,5 @@ MIT — use this for your own campaigns, commercial or personal.
 ---
 
 <p align="center">
-  <sub>Built with n8n · Powered by Relevance AI, Perplexity, GPT-4.1-mini & Claude 3.7 Sonnet</sub>
+  <sub>Built with n8n · Powered by Relevance AI, Perplexity, OpenAI & Anthropic</sub>
 </p>

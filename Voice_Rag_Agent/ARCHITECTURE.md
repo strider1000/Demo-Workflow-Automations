@@ -27,13 +27,13 @@ graph LR
 
     subgraph n8n["⚡ n8n Workflow"]
         WH["Webhook\n/support_agent"]
-        AGENT["AI Agent\n(Gemini Flash 2.0)"]
+        AGENT["AI Agent\n(Gemini model)"]
         TOOLS["5 Tools\n(Calendar, RAG, Search, Sheets)"]
         RESPOND["Respond to Webhook\n(JSON)"]
     end
 
     subgraph External["☁️ External Services"]
-        GEMINI["Google Gemini\nFlash 2.0"]
+        GEMINI["Google Gemini\nModel"]
         SUPABASE["Supabase\npgvector"]
         OPENAI_EMBED["OpenAI\nEmbeddings"]
         GOOGLE_CAL["Google Calendar"]
@@ -65,7 +65,7 @@ sequenceDiagram
     actor User
     participant Voice as Voice Platform
     participant Webhook as n8n Webhook
-    participant Agent as AI Agent (Gemini Flash)
+    participant Agent as AI Agent (Gemini model)
     participant Calendar as Get_Available_Slots / Book_Meeting
     participant VectorDB as Supabase Vector Store
     participant Search as SerpAPI
@@ -185,10 +185,10 @@ Response: JSON { status: "response text" }
 
 The webhook is the **boundary between the voice platform and the AI agent**. It expects the voice platform to handle speech-to-text and POST the transcribed text. The optional fields (name, email, phone, date, time) enable the voice platform to pre-extract entities and pass them as structured data — but the agent can also extract these from the raw text itself.
 
-### 2. AI Agent (Gemini Flash 2.0)
+### 2. AI Agent (Gemini model)
 
 ```
-Model:    Google Gemini Flash 2.0 (models/gemini-2.0-flash-exp)
+Model:    Google Gemini model
 Role:     Intent understanding + tool orchestration + response synthesis
 
 System Prompt:
@@ -209,14 +209,14 @@ Context injection:
   - Current date
 ```
 
-**Why Gemini Flash?** Voice conversations require sub-second response times. Gemini Flash 2.0 is optimised for low latency (~200ms for tool selection) and has a generous free tier. The agent's job is routing and synthesis — it doesn't need the creative writing capabilities of a larger model.
+**Why Gemini model?** Voice conversations require sub-second response times. Gemini model is optimised for low latency (~200ms for tool selection) and has a generous free tier. The agent's job is routing and synthesis — it doesn't need the creative writing capabilities of a larger model.
 
 **Temperature:** Default (not overridden). The agent needs deterministic tool selection, not creative variety.
 
 ### 3. Vector Store & Embeddings (RAG)
 
 ```
-Embeddings: OpenAI text-embedding-3-small (1536 dimensions)
+Embeddings: OpenAI embeddings model (1536 dimensions)
 Vector DB:  Supabase pgvector
 Table:      documents (id, content, metadata, embedding)
 Function:   match_documents(query_embedding, match_threshold, match_count)
@@ -228,7 +228,7 @@ Flow:
   4. Agent synthesises response from retrieved content
 ```
 
-**The embeddings model (OpenAI) is separate from the agent model (Gemini).** This is intentional — OpenAI's embeddings are state-of-the-art for retrieval quality, while Gemini Flash is better for fast, cheap agent reasoning. The two models don't need to be from the same provider.
+**The embeddings model (OpenAI) is separate from the agent model (Gemini).** This is intentional — OpenAI's embeddings are state-of-the-art for retrieval quality, while Gemini model is better for fast, cheap agent reasoning. The two models don't need to be from the same provider.
 
 ### 4. Calendar Tools
 
@@ -327,7 +327,7 @@ The agent has 5 tools, each registered as a separate node connected to the AI Ag
 
 ```mermaid
 graph TB
-    AGENT["AI Agent\n(Gemini Flash 2.0)"]
+    AGENT["AI Agent\n(Gemini model)"]
 
     subgraph Tools["🔧 Available Tools"]
         T1["Get_Available_Slots\nType: Google Calendar Tool\nTrigger: date queries"]
@@ -440,20 +440,20 @@ Webhooks are simpler to deploy, debug, and scale. The voice platform manages con
 
 The trade-off is that the agent has no memory of previous turns. For complex multi-turn conversations, the voice platform must resend context.
 
-### 2. Gemini Flash over GPT-4 for the agent
+### 2. Gemini model for the agent
 
-| Factor | Gemini Flash 2.0 | GPT-4 |
+| Factor | Gemini model | Alternative |
 |---|---|---|
 | Latency | ~200ms | ~800ms-2s |
 | Cost (1K tokens) | Free tier | ~$0.03/$0.06 |
 | Tool calling | Native | Native |
 | Voice-ready latency | Yes | Borderline |
 
-For voice, sub-second response time is critical — users notice 2-second pauses. Gemini Flash is fast enough that the voice platform can maintain natural conversational rhythm.
+For voice, sub-second response time is critical — users notice 2-second pauses. The Gemini model is fast enough that the voice platform can maintain natural conversational rhythm.
 
-### 3. OpenAI embeddings over Gemini embeddings
+### 3. OpenAI embeddings for retrieval
 
-Gemini has its own embedding model, but OpenAI's `text-embedding-3-small` has better benchmark performance for retrieval tasks. The embedding quality directly impacts RAG accuracy — higher-quality embeddings mean the right documents are returned more often. The cost difference is negligible (~$0.02 per 1M tokens).
+OpenAI's embeddings model provides strong benchmark performance for retrieval tasks. The embedding quality directly impacts RAG accuracy — higher-quality embeddings mean the right documents are returned more often. The cost difference is negligible (~$0.02 per 1M tokens).
 
 ### 4. Supabase pgvector over dedicated vector DB
 
@@ -479,7 +479,7 @@ Typical query latency (end-to-end from webhook to response):
 | Step | Time |
 |---|---|
 | Webhook → Agent | <10ms |
-| Agent reasoning (Gemini Flash) | 200-500ms |
+| Agent reasoning (Gemini model) | 200-500ms |
 | Tool execution (RAG query) | 100-300ms |
 | Tool execution (Calendar check) | 200-500ms |
 | Tool execution (Calendar book) | 300-800ms |

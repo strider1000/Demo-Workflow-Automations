@@ -206,12 +206,12 @@ Every piece of evidence is linked to a specific standard. The compliance trackin
 ### 2. Gap Analysis
 
 ```
-Select standard → Rate confidence (1-5) → Document gaps → Note recommendations
-                                                    ↓
-                                          Dashboard shows gap heatmap
+Select standard → System rates domain completion confidence → Document gaps → Note recommendations
+                                                                        ↓
+                                                              Dashboard shows gap heatmap
 ```
 
-Gap analysis is the pre-audit self-check. For each standard, you rate your confidence level, document specific gaps, and note recommended actions. The dashboard aggregates this into a visual heatmap showing which domains need attention.
+Gap analysis is the pre-audit self-check. The system automatically rates its confidence in how complete each domain is — surfacing which standards are fully covered, partially covered, or have critical gaps. You document specific gaps and note recommended actions. The dashboard aggregates this into a visual heatmap showing which domains need attention.
 
 ### 3. Submission & Self-Assurance Reports
 

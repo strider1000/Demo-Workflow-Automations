@@ -29,16 +29,16 @@ graph LR
         LOOP["Loop Over Items\n(one prospect at a time)"]
         SCRAPE["HTTP Request\nRelevance AI API"]
         RESEARCH["HTTP Request\nPerplexity API"]
-        ANALYSE["OpenAI Node\nGPT-4.1-mini"]
-        WRITE["OpenAI Node (via OpenRouter)\nClaude 3.7 Sonnet"]
+        ANALYSE["OpenAI Node\nOpenAI Model"]
+        WRITE["OpenAI Node (via OpenRouter)\nClaude Model"]
         OUTPUT["Google Sheets\nAppend/Update Row"]
     end
 
     subgraph External["☁️ External Services"]
         RELEVANCE["Relevance AI\nLinkedIn Scraper"]
         PERPLEXITY["Perplexity Sonar\nWeb Search"]
-        OPENAI["OpenAI API\nGPT-4.1-mini"]
-        OPENROUTER["OpenRouter\nClaude 3.7 Sonnet"]
+        OPENAI["OpenAI API\nOpenAI Model"]
+        OPENROUTER["OpenRouter\nClaude Model"]
         APIFY["Apify\nTrustPilot Scraper"]
     end
 
@@ -70,8 +70,8 @@ sequenceDiagram
     participant GS as Google Sheets
     participant Relevance as Relevance AI
     participant Perplexity as Perplexity Sonar
-    participant GPT as GPT-4.1-mini
-    participant Claude as Claude 3.7 Sonnet
+    participant GPT as OpenAI Model
+    participant Claude as Claude Model
     participant Apify as Apify
 
     User->>n8n: Click "Test workflow"
@@ -134,7 +134,7 @@ flowchart LR
     end
 
     subgraph Analysis["AI Analysis"]
-        H["Personalisation Opportunities\n+ Pain Points & Solutions\n(GPT-4.1-mini)"]
+        H["Personalisation Opportunities\n+ Pain Points & Solutions\n(OpenAI Model)"]
     end
 
     subgraph Generation["AI Generation"]
@@ -241,14 +241,14 @@ Input:  LinkedIn profile JSON + Perplexity research text
 Output: Structured analysis (personalisation + pain points)
 
 Flow:
-  1. GPT-4.1-mini via OpenAI node
+  1. OpenAI Model via OpenAI node
   2. System prompt defines analysis framework:
      - Personalization opportunities (LinkedIn posts, achievements, background)
      - Pain points & solutions mapped to our service offerings
   3. Output format: structured markdown with sections
 ```
 
-**The analysis is the bridge between raw research and email writing.** GPT-4.1-mini is used here (not Claude) because this is a structured extraction task — cheaper and just as accurate.
+**The analysis is the bridge between raw research and email writing.** OpenAI Model is used here (not Claude) because this is a structured extraction task — cheaper and just as accurate.
 
 ### 6. Email Generation (`Email #1 #2 #3`)
 
@@ -257,7 +257,7 @@ Input:  First Name, Company Name, Analysis text
 Output: JSON {email1: {subject, body}, email2: {body}, email3: {subject, body}}
 
 Flow:
-  1. Claude 3.7 Sonnet via OpenRouter
+  1. Claude model via OpenRouter
   2. Detailed prompt with email structure rules:
      - Email #1: Hook → Pain Point → Solution → CTA (max 100 words)
      - Email #2: Short follow-up (1 sentence, same thread)
@@ -266,7 +266,7 @@ Flow:
   4. Output: strict JSON (no markdown wrapper)
 ```
 
-**Why Claude for writing?** Email writing requires natural, non-robotic prose with subtle tonal control. Claude 3.7 Sonnet consistently produces more human-feeling output than GPT-4.1-mini for this task. The ~$0.003/prospect cost premium is negligible compared to the reply-rate improvement.
+**Why Claude for writing?** Email writing requires natural, non-robotic prose with subtle tonal control. Claude model consistently produces more human-feeling output than OpenAI Model for this task. The ~$0.003/prospect cost premium is negligible compared to the reply-rate improvement.
 
 ### 7. Output Writing (`Append or update row in sheet`)
 
@@ -320,21 +320,21 @@ The workflow contains **~8 script variants** wired as separate nodes. They share
 ```
 Loop Over Items
     │
-    ├── Script Option 1  →  Evaheld: research-driven, structured analysis prompt
-    ├── Script Option 3  →  Evaheld: template-driven with personalisation slot
-    ├── Script Option 4  →  Evaheld: facility-type-aware (residential/hospital/community)
-    ├── Script Option 5  →  Evaheld: lean version, lower token cost
-    ├── Script Option 6  →  Evaheld: alt research prompt variant
-    ├── Original Hooks   →  LeadsAlways: generic B2B hooks
-    ├── Basic LLM Chain  →  LeadsAlways: template-based hooks
+    ├── Script Option 1  →  Aged care: research-driven, structured analysis prompt
+    ├── Script Option 3  →  Aged care: template-driven with personalisation slot
+    ├── Script Option 4  →  Aged care: facility-type-aware (residential/hospital/community)
+    ├── Script Option 5  →  Aged care: lean version, lower token cost
+    ├── Script Option 6  →  Aged care: alt research prompt variant
+    ├── Original Hooks   →  Generic B2B hooks
+    ├── Basic LLM Chain  →  Template-based hooks
     └── Hiring Sales Staff →  Companies hiring sales roles
 ```
 
 Each variant has its own:
 - **Research prompt** (what to look for, word limits, output format)
-- **Writing persona** (Evaheld for aged care, LeadsAlways for B2B, etc.)
+- **Writing persona** (aged care, generic B2B, sales hiring, etc.)
 - **Template structure** (hook-first vs. pain-point-first vs. template-fill)
-- **Language model** (Claude 3.7 Sonnet for high-quality writing, GPT-4.1-mini for structured hooks)
+- **Language model** (Claude model for high-quality writing, OpenAI Model for structured hooks)
 - **Output columns** (V2, V3, or specific named columns)
 
 **Only one variant is active per loop iteration** — the `Loop Over Items` node outputs to a single variant. Switch variants by reconnecting the output.
