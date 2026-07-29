@@ -4,7 +4,7 @@
 > Manage TEQSA & ASQA standards, collect evidence, run gap analyses, generate self-assurance reports with AI, and track compliance progress — all in one collaborative platform.
 
 <p align="center">
-  <em>🚧 Demo video coming soon — add a 30-second screen recording here showing the platform</em>
+  <em>🚧 Demo video coming soon</em>
   <!-- <img src="docs/demo.gif" width="720" alt="Accredit Flow demo"> -->
 </p>
 
