@@ -5,8 +5,9 @@
 > **Live at [regu-radar.com](https://regu-radar.com)**
 
 <p align="center">
-  <em>🚧 Demo video coming soon — add a 30-second screen recording here showing the platform</em>
-  <!-- <img src="docs/demo.gif" width="720" alt="Regulatory Radar demo"> -->
+  <a href="https://lnkd.in/p/g4qeKH6G" target="_blank">
+    <img src="https://img.shields.io/badge/Watch-Demo_Video-e94560?style=for-the-badge&logo=youtube" alt="Watch Demo Video">
+  </a>
 </p>
 
 ---
